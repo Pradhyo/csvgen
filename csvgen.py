@@ -24,14 +24,14 @@ nullstr = ''
 vowels = list('aeiou')
 
 descriptions = []
-      
+
 simple_types = ['boolean', 'gender', 'gender_abbrev', 'uuid', 'ip_address',]
 param_types = ['regex', 'fixed', 'list']
 range_types = ['word']
 format_types = ['number', 'date']
 
 max_buff_size = 1024 * 1024
-  
+
 def gen_rownumber(start, row_number):
     return start + row_number
 
@@ -43,14 +43,14 @@ def gen_number(minnum, maxnum, decimals):
         return f % dec
     else:
         return num
-    
-     
+
+
 def word_part(letter_type):
     if letter_type is 'c':
         return random.sample([ch for ch in list(string.lowercase) if ch not in vowels], 1)[0]
     if letter_type is 'v':
         return random.sample(vowels, 1)[0]
-  
+
 def gen_syllable():
     ran = random.random()
     if ran < 0.333:
@@ -59,27 +59,27 @@ def gen_syllable():
         return word_part('c') + word_part('v')
     return word_part('c') + word_part('v') + word_part('c')
 
-  
+
 def gen_word(min_syllables, max_syllables):
     word = ''
     syllables = min_syllables + int(random.random() * (max_syllables - min_syllables))
     for i in range(0, syllables):
         word += gen_syllable()
-    
+
     return word.capitalize()
 
 def load_list(name):
     global datalists
     lines = [line.rstrip('\n') for line in open('data/' + name + '.csv')]
     datalists[name] = lines
-    
+
 def gen_from_list(name, target_uv, actual_uv):
     global datalists
     data = datalists.get(name)
     if data == None:
         load_list(name)
         data = datalists.get(name)
-    
+
     if target_uv == 0 or target_uv > len(data):
         return data[randint(0, len(data) -1)]
     else:
@@ -87,7 +87,7 @@ def gen_from_list(name, target_uv, actual_uv):
             return data[actual_uv]
         else:
             return data[randint(0, target_uv -1)]
-        
+
 
 def gen_from_user_list(num):
     global userlists
@@ -104,7 +104,7 @@ def gen_date(start, end, date_format):
     startts = datetime.strptime(start, date_format)
     endts = datetime.strptime(end, date_format)
     return random_date(startts, endts).strftime(date_format)
-    
+
 def gen_bool():
     n = randint(0, 1)
     if n == 0:
@@ -125,12 +125,12 @@ def parseFunc(func):
     if funcName not in ['substr', 'concat', 'copy', 'replace', 'upper', 'lower', 'add', 'sub', 'mult', 'div', 'mod', 'min', 'max', 'avg']:
         sys.stderr.write("Error: Unsupported function name " + funcName)
         sys.exit(2)
-        
+
     params = func[func.index('(') + 1:func.index(')')].split(',')
     params = [x.strip() for x in params]
     params = [x.strip("'") for x in params]
     return [funcName] + params
-    
+
 def read_description(filename):
     global descriptions, userlists, row_number_num
     num = 0
@@ -166,14 +166,14 @@ def read_description(filename):
                 unique_values = int(params[3])
             if len(params) > 4:
                 nullp = int(params[4])
-                
+
             desc.append(nullp)
             desc.append(minrange)
             desc.append(maxrange)
             desc.append(unique_values)
             if unique_values > 0:
                 userlists[num] = []
-                
+
         elif datatype in format_types:
             if len(params) < 4:
                 sys.stderr.write("Error: Type " + datatype + " must have 3 parameters\n")
@@ -185,7 +185,7 @@ def read_description(filename):
             if len(params) > 3:
                 format = params[3]
             if len(params) > 4:
-                nullp = int(params[4])    
+                nullp = int(params[4])
             desc.append(nullp)
             if datatype == 'number':
                 desc.append(int(minrange))
@@ -213,10 +213,10 @@ def read_description(filename):
             if len(params) < 1:
                 sys.stderr.write("Error: Missing function\n")
                 sys.exit(2)
-                
+
             f = parseFunc(params[1])
             if len(params) > 2:
-                nullp = int(params[2])    
+                nullp = int(params[2])
             desc.append(nullp)
             desc.append(f)
         else:
@@ -228,7 +228,7 @@ def read_description(filename):
             desc.append(nullp)
             desc.append(unique_values)
             desc.append(0)
-        
+
         descriptions.append(desc)
         num += 1
 
@@ -236,21 +236,21 @@ def getMin(params, row_list):
     l = []
     for p in params:
         l.append(int(getParam(p, row_list)))
-        
+
     return min(l)
 
 def getMax(params, row_list):
     l = []
     for p in params:
         l.append(int(getParam(p, row_list)))
-        
+
     return max(l)
 
 def getAvg(params, row_list):
     l = []
     for p in params:
         l.append(int(getParam(p, row_list)))
-        
+
     return float(sum(l))/len(l)
 
 
@@ -259,12 +259,12 @@ def getParam(p, row_list):
         return row_list[int(p[1:]) - 1]
     else:
         return p
-    
+
 def generate_func(desc, row_list):
     nullp = desc[0]
     if nullp > 0 and randint(0, 100) < nullp:
         return ""
-    
+
     f = desc[1]
     if f[0] == 'substr':
         s = getParam(f[1], row_list)
@@ -304,8 +304,12 @@ def generate_func(desc, row_list):
     else:
         return ""
 
-def generate_csv():
-    buff = ""
+def generate_csv(filename):
+    # Generate header row
+    lines = [line.rstrip('\n') for line in open(filename)]
+    buff = ','.join((shlex.split(line)[-1] for line in lines if line != ''))
+    buff += '\n'
+
     for i in range(0, rows):
         last = len(descriptions)
         row_list = []
@@ -343,7 +347,7 @@ def generate_csv():
                         row_list.append(newword)
                     else:
                         row_list.append(gen_from_user_list(j - 1))
-                else: 
+                else:
                     row_list.append(gen_word(desc[2], desc[3]))
             elif datatype == 'number':
                 row_list.append(str(gen_number(desc[2], desc[3], desc[4])))
@@ -356,7 +360,7 @@ def generate_csv():
                 row_list.append(gen_from_list(datatype, desc[2], uv))
                 desc[3] = uv + 1
             j += 1
-        
+
         if has_func == False:
             for i in range(0, last):
                 buff += row_list[i]
@@ -371,14 +375,14 @@ def generate_csv():
                 if i < last - 1:
                     buff += delimiter
         buff += '\n'
-        
+
         if len(buff) > max_buff_size:
             sys.stdout.write(buff)
             buff = ""
-            
+
     if len(buff) > 0:
         sys.stdout.write(buff)
-        
+
 def main(argv):
     global rows, delimiter, nullstr
     try:
@@ -386,7 +390,7 @@ def main(argv):
     except getopt.GetoptError:
         sys.stderr.write('csvgen.py -i <number of rows> -d <delimiter> -n <null string> -o <output file> <description file>\n')
         sys.exit(2)
-        
+
     for opt, arg in opts:
         if opt == '-i':
             rows = int(arg)
@@ -403,14 +407,14 @@ def main(argv):
                 nullstr = nullstr[1:-1]
         elif opt == '-o':
             sys.stdout = open(arg,'w')
-            
+
     if len(args) == 0:
         sys.stderr.write('csvgen.py -i <number of rows> -d <delimiter> -n <null string> -o <output file> <description file>\n')
         sys.exit(2)
-    
+
     read_description(args[0])
     t1 = datetime.now()
-    generate_csv()
+    generate_csv(args[0])
     t2 = datetime.now()
     sys.stderr.write("Running time is: " + str(t2-t1) + "\n")
 
